@@ -35,6 +35,7 @@ frontend/dist-ssr/
 .env
 .env.local
 .env.*.local
+.venv/
 
 # Test coverage
 htmlcov/

@@ -5,6 +5,9 @@ import ContactsView from '../views/ContactsView.vue'
 import CompaniesView from '../views/CompaniesView.vue'
 import DealsView from '../views/DealsView.vue'
 import TasksView from '../views/TasksView.vue'
+import TeamsView from '../views/TeamsView.vue'
+import AIInsightsView from '../views/AIInsightsView.vue'
+import ProfileView from '../views/ProfileView.vue'
 
 const routes = [
   {
@@ -41,6 +44,24 @@ const routes = [
     path: '/tasks',
     name: 'Tasks',
     component: TasksView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/teams',
+    name: 'Teams',
+    component: TeamsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/ai-insights',
+    name: 'AIInsights',
+    component: AIInsightsView,
+    meta: { requiresAuth: true }
+  },
+  {
+    path: '/profile',
+    name: 'Profile',
+    component: ProfileView,
     meta: { requiresAuth: true }
   }
 ]

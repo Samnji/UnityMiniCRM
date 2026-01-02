@@ -120,6 +120,67 @@ export const crmService = {
   async deleteTask(id) {
     await api.delete(`/tasks/${id}/`)
   },
+
+  // Teams
+  async getTeams() {
+    const response = await api.get('/teams/')
+    return response.data
+  },
+  async getTeam(id) {
+    const response = await api.get(`/teams/${id}/`)
+    return response.data
+  },
+  async getTeamMembers(id) {
+    const response = await api.get(`/teams/${id}/members/`)
+    return response.data
+  },
+  async getTeamInsights(id) {
+    const response = await api.get(`/teams/${id}/insights/`)
+    return response.data
+  },
+  async createTeam(data) {
+    const response = await api.post('/teams/', data)
+    return response.data
+  },
+  async updateTeam(id, data) {
+    const response = await api.put(`/teams/${id}/`, data)
+    return response.data
+  },
+  async deleteTeam(id) {
+    await api.delete(`/teams/${id}/`)
+  },
+
+  // User Profiles
+  async getProfiles() {
+    const response = await api.get('/profiles/')
+    return response.data
+  },
+  async getMyProfile() {
+    const response = await api.get('/profiles/me/')
+    return response.data
+  },
+  async updateMyProfile(data) {
+    const response = await api.patch('/profiles/update_me/', data)
+    return response.data
+  },
+  async updateProfile(id, data) {
+    const response = await api.patch(`/profiles/${id}/`, data)
+    return response.data
+  },
+
+  // AI Insights
+  async getAIInsights() {
+    const response = await api.get('/ai/insights/')
+    return response.data
+  },
+  async getTeamAIInsights() {
+    const response = await api.get('/ai/team-insights/')
+    return response.data
+  },
+  async getDealAIScore(id) {
+    const response = await api.get(`/deals/${id}/ai_score/`)
+    return response.data
+  },
 }
 
 export default api

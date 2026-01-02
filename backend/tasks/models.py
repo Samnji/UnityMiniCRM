@@ -1,5 +1,87 @@
 from django.db import models
 from django.contrib.auth.models import User
+from django.db.models.signals import post_save
+from django.dispatch import receiver
+
+
+class Team(models.Model):
+    """Teams for organizing users"""
+    name = models.CharField(max_length=200)
+    description = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    
+    class Meta:
+        ordering = ['name']
+    
+    def __str__(self):
+        return self.name
+    
+    @property
+    def member_count(self):
+        return self.userprofile_set.count()
+
+
+class UserProfile(models.Model):
+    """Extended user profile with roles and team assignment"""
+    
+    ROLE_CHOICES = [
+        ('sales_rep', 'Sales Representative'),
+        ('manager', 'Sales Manager'),
+        ('admin', 'Administrator'),
+        ('viewer', 'Viewer'),
+    ]
+    
+    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='profile')
+    team = models.ForeignKey(Team, on_delete=models.SET_NULL, null=True, blank=True)
+    role = models.CharField(max_length=20, choices=ROLE_CHOICES, default='sales_rep')
+    phone = models.CharField(max_length=20, blank=True)
+    avatar = models.URLField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+    
+    class Meta:
+        ordering = ['user__username']
+    
+    def __str__(self):
+        return f"{self.user.username} - {self.get_role_display()}"
+    
+    def can_edit_record(self, record):
+        """Check if user can edit a record"""
+        # Admins can edit everything
+        if self.role == 'admin' or self.user.is_superuser:
+            return True
+        
+        # Managers can edit their team's records
+        if self.role == 'manager' and hasattr(record.created_by, 'profile'):
+            return record.created_by.profile.team == self.team
+        
+        # Sales reps can only edit their own records
+        return record.created_by == self.user
+    
+    def can_view_record(self, record):
+        """Check if user can view a record"""
+        # Admins and viewers can view everything
+        if self.role in ['admin', 'viewer'] or self.user.is_superuser:
+            return True
+        
+        # Managers can view their team's records
+        if self.role == 'manager' and hasattr(record.created_by, 'profile'):
+            return record.created_by.profile.team == self.team
+        
+        # Sales reps can view their own records
+        return record.created_by == self.user
+
+
+# Signal to auto-create UserProfile when User is created
+@receiver(post_save, sender=User)
+def create_user_profile(sender, instance, created, **kwargs):
+    if created:
+        UserProfile.objects.create(user=instance)
+
+@receiver(post_save, sender=User)
+def save_user_profile(sender, instance, **kwargs):
+    if hasattr(instance, 'profile'):
+        instance.profile.save()
 
 
 class Company(models.Model):

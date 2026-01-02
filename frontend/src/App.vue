@@ -1,21 +1,39 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { authService } from './services/api'
+import { authService, crmService } from './services/api'
 
 const router = useRouter()
 const route = useRoute()
 const drawer = ref(true)
 const user = ref(null)
+const userProfile = ref(null)
 const rail = ref(false)
 
 const isAuthenticated = computed(() => !!localStorage.getItem('token'))
 const showLayout = computed(() => route.path !== '/login')
 
-onMounted(() => {
+const userDisplayName = computed(() => {
+  if (userProfile.value?.full_name) {
+    return userProfile.value.full_name
+  }
+  return user.value?.username || 'User'
+})
+
+const userRole = computed(() => {
+  return userProfile.value?.role_display || 'User'
+})
+
+onMounted(async () => {
   const userStr = localStorage.getItem('user')
   if (userStr) {
     user.value = JSON.parse(userStr)
+    // Fetch full profile data
+    try {
+      userProfile.value = await crmService.getMyProfile()
+    } catch (error) {
+      console.error('Failed to load user profile:', error)
+    }
   }
 })
 
@@ -60,6 +78,24 @@ const menuItems = [
     color: '#0288D1',
     gradient: 'linear-gradient(135deg, #039BE5 0%, #01579B 100%)'
   },
+  { 
+    title: 'AI Insights', 
+    icon: 'mdi-brain', 
+    route: '/ai-insights',
+    description: 'Smart analytics',
+    color: '#7B1FA2',
+    gradient: 'linear-gradient(135deg, #7B1FA2 0%, #4A148C 100%)',
+    badge: 'NEW',
+    badgeColor: 'success'
+  },
+  { 
+    title: 'Teams', 
+    icon: 'mdi-account-group-outline', 
+    route: '/teams',
+    description: 'Manage teams',
+    color: '#00897B',
+    gradient: 'linear-gradient(135deg, #00897B 0%, #004D40 100%)'
+  },
 ]
 
 const handleLogout = async () => {
@@ -75,8 +111,25 @@ const handleLogout = async () => {
 }
 
 const getUserInitials = () => {
+  if (userProfile.value?.full_name) {
+    const names = userProfile.value.full_name.split(' ')
+    if (names.length >= 2) {
+      return (names[0].charAt(0) + names[names.length - 1].charAt(0)).toUpperCase()
+    }
+    return names[0].charAt(0).toUpperCase()
+  }
   if (!user.value?.username) return 'U'
   return user.value.username.charAt(0).toUpperCase()
+}
+
+const getRoleColor = (role) => {
+  const colors = {
+    admin: 'error',
+    manager: 'warning',
+    sales_rep: 'primary',
+    viewer: 'info'
+  }
+  return colors[role] || 'default'
 }
 
 const getItemGradient = (item) => {
@@ -173,13 +226,13 @@ const getItemGradient = (item) => {
             <!-- User Menu -->
             <v-menu offset-y min-width="280">
               <template v-slot:activator="{ props }">
-                <v-btn v-bind="props" variant="flat" class="user-btn px-2" rounded="lg">
+                <v-btn v-bind="props" variant="flat" class="user-btn px-2 py-1" rounded="lg">
                   <v-avatar color="primary" size="40" class="avatar-gradient">
                     <span class="text-white font-weight-bold">{{ getUserInitials() }}</span>
                   </v-avatar>
                   <div class="ml-3 text-left d-none d-lg-block">
-                    <div class="text-body-2 font-weight-bold">{{ user?.username || 'User' }}</div>
-                    <div class="text-caption text-grey">Premium Account</div>
+                    <div class="text-body-2 font-weight-bold">{{ userDisplayName }}</div>
+                    <div class="text-caption text-grey">{{ userRole }}</div>
                   </div>
                   <v-icon class="ml-2">mdi-chevron-down</v-icon>
                 </v-btn>
@@ -190,15 +243,36 @@ const getItemGradient = (item) => {
                     <v-avatar color="primary" size="56" class="avatar-gradient">
                       <span class="text-white text-h5 font-weight-bold">{{ getUserInitials() }}</span>
                     </v-avatar>
-                    <div class="ml-3">
-                      <div class="text-h6 font-weight-bold">{{ user?.username || 'User' }}</div>
-                      <div class="text-caption text-grey">{{ user?.email || '' }}</div>
-                      <v-chip size="x-small" color="success" class="mt-1">Premium</v-chip>
+                    <div class="ml-3 flex-grow-1">
+                      <div class="text-h6 font-weight-bold">{{ userDisplayName }}</div>
+                      <div class="text-caption text-grey mb-1">{{ user?.email || '' }}</div>
+                      <v-chip 
+                        size="x-small" 
+                        :color="getRoleColor(userProfile?.role)" 
+                        variant="flat"
+                      >
+                        {{ userRole }}
+                      </v-chip>
+                      <v-chip 
+                        v-if="userProfile?.team_name" 
+                        size="x-small" 
+                        color="blue-grey" 
+                        variant="tonal"
+                        class="ml-1"
+                      >
+                        <v-icon size="x-small" start>mdi-account-group</v-icon>
+                        {{ userProfile.team_name }}
+                      </v-chip>
                     </div>
                   </div>
                   <v-divider class="my-3"></v-divider>
                   <v-list density="compact" class="bg-transparent">
-                    <v-list-item prepend-icon="mdi-account-circle" title="My Profile" subtitle="View your details"></v-list-item>
+                    <v-list-item 
+                      prepend-icon="mdi-account-circle" 
+                      title="My Profile" 
+                      subtitle="View your details"
+                      @click="router.push('/profile')"
+                    ></v-list-item>
                     <v-list-item prepend-icon="mdi-cog" title="Settings" subtitle="Preferences"></v-list-item>
                     <v-list-item prepend-icon="mdi-help-circle" title="Help & Support" subtitle="Get assistance"></v-list-item>
                     <v-divider class="my-2"></v-divider>
@@ -289,10 +363,18 @@ const getItemGradient = (item) => {
             </template>
             
             <v-list-item-title 
-              class="font-weight-medium"
+              class="font-weight-medium d-flex align-center"
               :class="route.path === item.route ? 'text-white' : 'text-white'"
             >
               {{ item.title }}
+              <v-chip 
+                v-if="item.badge && !rail" 
+                :color="item.badgeColor" 
+                size="x-small" 
+                class="ml-2"
+              >
+                {{ item.badge }}
+              </v-chip>
             </v-list-item-title>
             
             <v-list-item-subtitle 

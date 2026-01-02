@@ -5,16 +5,19 @@ import { crmService } from '../services/api'
 
 const router = useRouter()
 const stats = ref(null)
+const aiInsights = ref(null)
 const loading = ref(true)
 const upcomingTasks = ref([])
 
 onMounted(async () => {
   try {
-    const [statsData, tasksData] = await Promise.all([
+    const [statsData, tasksData, aiData] = await Promise.all([
       crmService.getDashboardStats(),
-      crmService.getTasks()
+      crmService.getTasks(),
+      crmService.getAIInsights().catch(() => null) // Don't fail if AI insights fail
     ])
     stats.value = statsData
+    aiInsights.value = aiData
     upcomingTasks.value = tasksData
       .filter(t => t.status !== 'completed')
       .sort((a, b) => new Date(a.due_date) - new Date(b.due_date))
@@ -98,6 +101,57 @@ const navigateTo = (path) => {
     </v-row>
 
     <template v-else-if="stats">
+      <!-- AI Insights Banner -->
+      <v-row v-if="aiInsights" class="mb-4">
+        <v-col cols="12">
+          <v-card elevation="4" class="ai-banner">
+            <v-card-text class="pa-6">
+              <div class="d-flex align-center justify-space-between flex-wrap gap-4">
+                <div class="d-flex align-center">
+                  <v-avatar color="purple" size="56" class="mr-4">
+                    <v-icon size="32" color="white">mdi-brain</v-icon>
+                  </v-avatar>
+                  <div>
+                    <h3 class="text-h5 font-weight-bold mb-1">AI Sales Intelligence</h3>
+                    <p class="text-body-2 text-medium-emphasis mb-0">
+                      Pipeline Health: <strong>{{ aiInsights.pipeline_health_score }}/100</strong> | 
+                      Win Rate: <strong>{{ aiInsights.win_rate }}%</strong> | 
+                      Active Deals: <strong>{{ aiInsights.active_deals_count }}</strong>
+                    </p>
+                  </div>
+                </div>
+                <div class="d-flex gap-2 flex-wrap">
+                  <v-chip
+                    v-if="aiInsights.stale_deals_count > 0"
+                    color="warning"
+                    variant="flat"
+                    prepend-icon="mdi-alert"
+                  >
+                    {{ aiInsights.stale_deals_count }} need attention
+                  </v-chip>
+                  <v-chip
+                    v-if="aiInsights.high_value_opportunities > 0"
+                    color="success"
+                    variant="flat"
+                    prepend-icon="mdi-star"
+                  >
+                    {{ aiInsights.high_value_opportunities }} hot deals
+                  </v-chip>
+                  <v-btn
+                    color="purple"
+                    variant="tonal"
+                    prepend-icon="mdi-chart-line"
+                    @click="navigateTo('/ai-insights')"
+                  >
+                    View Full Insights
+                  </v-btn>
+                </div>
+              </div>
+            </v-card-text>
+          </v-card>
+        </v-col>
+      </v-row>
+
       <!-- Stats Cards -->
       <v-row class="mb-4">
         <v-col cols="12" sm="6" lg="3">
@@ -423,6 +477,11 @@ const navigateTo = (path) => {
 </template>
 
 <style scoped>
+.ai-banner {
+  background: linear-gradient(135deg, #f5f7fa 0%, #e8eaf6 100%);
+  border-left: 6px solid #7B1FA2;
+}
+
 .stat-card {
   transition: all 0.3s ease;
   border-left: 4px solid transparent;
