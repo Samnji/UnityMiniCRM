@@ -153,7 +153,8 @@ class Command(BaseCommand):
             self.stdout.write(f'  {user.username} ({profile.get_role_display()}) - Team: {team_name}')
         
         # Create admin user if not exists
-        if not User.objects.filter(username='admin').exists():
+        admin_user = User.objects.filter(username='admin').first()
+        if not admin_user:
             admin_user = User.objects.create_superuser(
                 username='admin',
                 email='admin@company.com',
@@ -165,6 +166,17 @@ class Command(BaseCommand):
             admin_user.profile.phone = '+1-555-0001'
             admin_user.profile.save()
             self.stdout.write('  admin (Administrator) - Superuser')
+        else:
+            admin_user.set_password('admin123')
+            admin_user.email = 'admin@company.com'
+            admin_user.first_name = 'Admin'
+            admin_user.last_name = 'User'
+            admin_user.save()
+            if hasattr(admin_user, 'profile'):
+                admin_user.profile.role = 'admin'
+                admin_user.profile.phone = '+1-555-0001'
+                admin_user.profile.save()
+            self.stdout.write('  admin (Administrator) - Password reset')
         
         # Create Companies
         self.stdout.write('Creating companies...')

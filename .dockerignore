@@ -1,0 +1,14 @@
+# Docker
+.dockerignore
+Dockerfile
+docker-compose.yml
+
+# Environment
+.env
+.env.local
+
+# Database
+*.sqlite3
+
+# Logs
+*.log

@@ -60,13 +60,64 @@ interview/
 - Node.js 16+
 - npm or yarn
 
-2. Log in with the demo credentials:
-   - **Username:** demo
-   - **Password:** demo123
+### Option 1: Docker (Recommended)
+
+Run both backend and frontend with a single command:
+
+```bash
+docker compose up
+```
+
+Access the application:
+- Frontend: http://localhost:5173
+- Backend API: http://localhost:8000
+- Django Admin: http://localhost:8000/admin
+
+To stop the containers:
+```bash
+docker compose down
+```
+
+To rebuild after changes:
+```bash
+docker compose up --build
+```
+
+### Option 2: Manual Setup
+
+#### Backend Setup
+
+```bash
+cd backend
+python -m venv venv
+source venv/bin/activate  # On Windows: venv\Scripts\activate
+pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser  # Create admin user
+python manage.py runserver
+```
+
+#### Frontend Setup
+
+```bash
+cd frontend
+npm install
+npm run dev
+```
+
+## Usage
+
+1. Navigate to http://localhost:5173
+2. Log in with one of these accounts:
+   - **Admin:** username=`admin`, password=`admin123`
+   - **Manager:** username=`john.smith`, password=`password123`
+   - **Sales Rep:** username=`sarah.johnson`, password=`password123`
+   - **Viewer:** username=`viewer.user`, password=`password123`
 3. Explore the CRM features:
-   - View dashboard statistics
+   - View dashboard statistics with AI insights
    - Manage contacts, companies, deals, and tasks
-   - Create, edit, and delete records
+   - View team performance and AI recommendations
+   - Test role-based access control
 
 ## API Endpoints
 

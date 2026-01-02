@@ -92,8 +92,10 @@ const handleLogin = async () => {
               <v-alert type="info" variant="tonal" density="compact">
                 <div class="text-caption">
                   <strong>Demo Credentials:</strong><br>
-                  Username: demo<br>
-                  Password: demo123
+                  Admin: admin / admin123<br>
+                  Manager: john.smith / password123<br>
+                  Sales Rep: sarah.johnson / password123<br>
+                  Viewer: viewer.user / password123
                 </div>
               </v-alert>
             </v-form>
